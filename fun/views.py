@@ -168,6 +168,55 @@ class WriteStoryAPI(APIView): # Done
 
         return JsonResponse({'status': status.HTTP_200_OK, 'message': "success to write", 'data': ''})
 
+class VerifyToken(APIView):
+    permission_classes = (AllowAny,) 
+
+    def post(self, request, *args, **kwargs):
+        token = request.data.get('token')
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+        except:
+            print("Invalid token")
+            return JsonResponse({'status': status.HTTP_400_BAD_REQUEST, 'message': "조작된 토큰입니다", 'data': ''})
+        expire = payload.get('expire')
+        
+        if int(time.time()) > expire:
+            print('expired token')
+            return JsonResponse({'status': status.HTTP_401_UNAUTHORIZED, 'message': "만료된 토큰입니다", 'data': ''})
+        print('success')
+        return JsonResponse({'status': status.HTTP_200_OK, 'message': "토큰 사용 가능", 'data': ""})
+
+class RefreshToken(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request, *args, **kwargs):
+        token = request.data.get('token')
+
+        try:
+            payload = jwt.decode(
+                token, settings.SECRET_KEY, algorithms=['HS256'])
+        except:
+            print("Invalid token")
+            return JsonResponse({'status': status.HTTP_400_BAD_REQUEST, 'message': "조작된 토큰입니다", 'data': ''})
+
+        expire = payload.get('expire')
+        username = payload.get('username')
+        if int(time.time()) > expire:
+            print('expired token')
+            return JsonResponse({'status': status.HTTP_401_UNAUTHORIZED, 'message': "만료된 리프레쉬 토큰입니다", 'data': ''})
+        
+        exprie_ts = int(time.time()) + 86400
+        payload = {'username': username, 'expire': exprie_ts}
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+        
+        token_data = token.decode('utf-8')
+
+        exprie_ts = int(time.time()) + 86400 * 14
+        payload = {'username': username, 'expire': exprie_ts}
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+        refresh_token_data = token.decode('utf-8')
+        
+        return JsonResponse({'status': status.HTTP_200_OK, 'message': "토큰 갱신 성공", 'data': {'token': token_data, 'refresh_token': refresh_token_data}})
 
 class JoinAPI(APIView): # Done
     permission_classes = (AllowAny,)

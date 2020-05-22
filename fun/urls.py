@@ -3,6 +3,8 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('verify/', views.VerifyToken.as_view()),
+    path('refresh/', views.RefreshToken.as_view()),
     path('login/', views.LoginAPI.as_view()),
     path('join/', views.JoinAPI.as_view()),
     path('my-story/<int:page>/',views.GetSavedStoryAPI.as_view()),
