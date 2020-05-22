@@ -59,6 +59,12 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'fun.backend.MyTokenAuthentication',
+    ),
+    'AUTHENTICATION_BACKENDS' : (
+        'fun.backend.MyBackend',
+    ),
 }
 
 
