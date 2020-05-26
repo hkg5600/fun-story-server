@@ -79,11 +79,26 @@ class SaveStoryAPI(APIView): # Done
 
     def get(self, request, story=None, format=None):
         user = self.get_object()
-        story = Save.objects.create(user=user, story=Story.objects.get(id=story))
+        story =Story.objects.get(id=story)
+        if (Save.objects.filter(user=user, story=story).exists()):
+            pass
+        story = Save.objects.create(user=user,story=story)
         story.save()
         
         return JsonResponse({'status': status.HTTP_200_OK, 'message': "success to save", 'data': ''})
 
+    def post(self, request, *args, **kwargs):
+        user = self.get_object()
+        save_list = request.data.get("save_list")
+        for save in save_list:
+            if (Save.objects.filter(user=user, story=save).exists()):
+                print('n')
+                pass
+            else:
+                print('y')
+                story = Save.objects.create(user=user, story=Story.objects.get(id=save))
+                story.save()
+        return JsonResponse({'status': status.HTTP_200_OK, 'message': "success to save", 'data': ''})    
 
 class GetSavedStoryAPI(APIView): # Done
 

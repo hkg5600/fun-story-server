@@ -10,6 +10,7 @@ urlpatterns = [
     path('my-story/<int:page>/',views.GetSavedStoryAPI.as_view()),
     path('write-story/', views.WriteStoryAPI.as_view()),
     path('save-story/<int:story>/', views.SaveStoryAPI.as_view()),
+    path('save-story/', views.SaveStoryAPI.as_view()),
     path('story/<int:page>/<int:user>/<int:follow>/<int:category>/', views.GetStoryAPI.as_view()),
     path('story/<int:page>/<int:user>/<int:follow>/', views.GetStoryAPI.as_view()),
     path('story/<int:page>/<int:user>/', views.GetStoryAPI.as_view()),
