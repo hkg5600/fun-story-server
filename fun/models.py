@@ -7,6 +7,8 @@ class Category(Enum):
     Horror = '101'
     Sad= '103'
     Knowledge = '102'
+    Romance = '104'
+    Poem = '105'
     
 class UserProfile(models.Model):
     user = models.OneToOneField(User, to_field='username', on_delete=models.CASCADE)

@@ -13,7 +13,7 @@ class StorySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Story
-        fields = ('id','title','description','user')
+        fields = ('id','title','description','user', 'category')
 
 class StoryCountSerializer(serializers.ModelSerializer):
     
