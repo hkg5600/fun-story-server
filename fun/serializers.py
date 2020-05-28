@@ -22,8 +22,9 @@ class StoryCountSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class UserSerialzier(serializers.ModelSerializer):
-    profile_image = serializers.FileField(source='userprofile.profile_image', read_only=True)
+    #profile_image = serializers.FileField(source='userprofile.profile_image', read_only=True)
+    
     class Meta:
         model = User
-        fields = ('id','username','profile_image')
+        fields = ('id','username')
    

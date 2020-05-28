@@ -7,7 +7,7 @@ urlpatterns = [
     path('refresh/', views.RefreshToken.as_view()),
     path('login/', views.LoginAPI.as_view()),
     path('join/', views.JoinAPI.as_view()),
-    path('my-story/<int:page>/',views.GetSavedStoryAPI.as_view()),
+    path('my-story/',views.GetSavedStoryAPI.as_view()),
     path('write-story/', views.WriteStoryAPI.as_view()),
     path('save-story/<int:story>/', views.SaveStoryAPI.as_view()),
     path('save-story/', views.SaveStoryAPI.as_view()),
@@ -20,4 +20,5 @@ urlpatterns = [
     path('story-detail/<int:id>/', views.GetStoryDetailAPI.as_view()),
     path('profile/', views.UserProfileAPI.as_view()),
     path('user/<int:id>/', views.UserInfoAPI.as_view()),
+    path('user-info/<int:id>/', views.UserInfoWithFollowAPI.as_view()),
 ]

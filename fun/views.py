@@ -30,10 +30,29 @@ from .models import (
 
 class UserInfoAPI(APIView):
     permission_classes = (AllowAny,)
+    def get_object(self):
+        return self.request.user
     def get(self, request, id=None, format=None):
         user = User.objects.get(id=id)
         serializer = UserSerialzier(user, many=False)
-        return JsonResponse({'status': status.HTTP_200_OK, 'message': "success to find", 'data': {'user-info':serializer.data}})
+        return JsonResponse({'status': status.HTTP_200_OK, 'message': "success to find", 'data': {'user':serializer.data}})
+
+class UserInfoWithFollowAPI(APIView):
+    def get_object(self):
+        return self.request.user
+    def get(self, request, id=None, format=None):
+        user = User.objects.get(id=id)
+        serializer = UserSerialzier(user, many=False)
+        
+        me = self.get_object()
+        
+        if (Follow.objects.filter(user=me, follower=user).exists()):
+            return JsonResponse({'status': status.HTTP_200_OK, 'message': "success to find", 'data': {'user':serializer.data, 'follow':True}})
+        else:
+            return JsonResponse({'status': status.HTTP_200_OK, 'message': "success to find", 'data': {'user':serializer.data, 'follow':False}})
+       
+
+        
 class UserProfileAPI(APIView):
     def get_object(self):
         return self.request.user
@@ -59,18 +78,24 @@ class GetFollowerAPI(APIView): # Done
             next_page = -1
         serializer = UserSerialzier(query, many=True)
         
-        return JsonResponse({'status': status.HTTP_200_OK, 'message': "story list", 'data': {'follower_list':serializer.data, 'last_page':is_last_page, 'next_page':next_page}})
+        return JsonResponse({'status': status.HTTP_200_OK, 'message': "story list", 'data': {'list':serializer.data, 'isLast':is_last_page, 'next':next_page}})
 
 class FollowUserAPI(APIView): # Done
     def get_object(self):
         return self.request.user
 
-    def get(self, request, user=None, format=None):
+    def get(self, request, user=None,format=None):
         me = self.get_object()
-        follow = Follow.objects.create(user=me, follower=User.objects.get(id=user))
-        follow.save()
-        
-        return JsonResponse({'status': status.HTTP_200_OK, 'message': "success to follow", 'data': ''})
+
+        if (Follow.objects.filter(user=me, follower = User.objects.get(id=user)).exists()):
+            data = Follow.objects.filter(user=me, follower = User.objects.get(id=user))
+            data.delete()
+            return JsonResponse({'status': status.HTTP_200_OK, 'message': "success to unfollow", 'data': ''})
+        else:
+            data = Follow.objects.create(user=me, follower = User.objects.get(id=user))
+            data.save()
+            return JsonResponse({'status': status.HTTP_200_OK, 'message': "success to follow", 'data': ''})
+      
 
 class SaveStoryAPI(APIView): # Done
 
@@ -82,8 +107,9 @@ class SaveStoryAPI(APIView): # Done
         story =Story.objects.get(id=story)
         if (Save.objects.filter(user=user, story=story).exists()):
             pass
-        story = Save.objects.create(user=user,story=story)
-        story.save()
+        else:
+            story = Save.objects.create(user=user,story=story)
+            story.save()
         
         return JsonResponse({'status': status.HTTP_200_OK, 'message': "success to save", 'data': ''})
 
@@ -105,17 +131,13 @@ class GetSavedStoryAPI(APIView): # Done
     def get_object(self):
         return self.request.user
 
-    def get(self, request, page=None,format=None):
+    def get(self, request,format=None):
         user = self.get_object()
-        story_id_list = Save.objects.filter(user=user).values_list('story', flat=True)[page*15:(page+1)*15]
+        story_id_list = Save.objects.filter(user=user).values_list('story', flat=True)
         query = Story.objects.filter(id__in=story_id_list).order_by('-id')
-        is_last_page = False
-        next_page = page + 1
-        if (query.count() < 10):
-            is_last_page = True
         serializer = StorySerializer(query, many=True)
         
-        return JsonResponse({'status': status.HTTP_200_OK, 'message': "story list", 'data': {'story_list':serializer.data, 'last_page':is_last_page, 'next_page':next_page}})
+        return JsonResponse({'status': status.HTTP_200_OK, 'message': "story list", 'data': {'list':serializer.data}})
 
 class GetStoryAPI(APIView): # Done
     permission_classes = (AllowAny,)
@@ -126,7 +148,7 @@ class GetStoryAPI(APIView): # Done
     def get(self, request, page=None,user=None, follow=None, category=None,format=None):
         if (user is not 0):
             owner = User.objects.get(id=user)
-            query = Story.objects.filter(user=owner)[page*15:(page+1)*15]
+            query = Story.objects.filter(user=owner).order_by('-id')[page*15:(page+1)*15]
             print("test")
         else:
             if (follow is not 0):
@@ -149,9 +171,9 @@ class GetStoryAPI(APIView): # Done
         if (query.count() < 10):
             is_last_page = True
         serializer = StorySerializer(query, many=True)
-        return JsonResponse({'status': status.HTTP_200_OK, 'message': "story list", 'data': {'story_list':serializer.data, 'last_page':is_last_page, 'next_page':next_page}})
+        return JsonResponse({'status': status.HTTP_200_OK, 'message': "story list", 'data': {'list':serializer.data, 'isLast':is_last_page, 'next':next_page}})
 
-    def delete(self, request, id, format=None):
+    def delete(self, request, id, format=None):   
         story = Story.objects.get(id=id)
         story.delete()
         story.save()
@@ -172,7 +194,7 @@ class GetStoryDetailAPI(APIView):
         story.save()
         serializer = StoryCountSerializer(story, many=False)
         
-        return JsonResponse({'status': status.HTTP_200_OK, 'message': "story list", 'data': {'story-detail':serializer.data}})
+        return JsonResponse({'status': status.HTTP_200_OK, 'message': "story list", 'data': {'story':serializer.data}})
 
 
 class WriteStoryAPI(APIView): # Done
@@ -194,7 +216,7 @@ class WriteStoryAPI(APIView): # Done
         return JsonResponse({'status': status.HTTP_200_OK, 'message': "success to write", 'data': ''})
 
 class VerifyToken(APIView):
-    permission_classes = (AllowAny,)
+    #permission_classes = (AllowAny,)
 
     def post(self, request, *args, **kwargs):
         token = request.data.get('token')
@@ -241,7 +263,7 @@ class RefreshToken(APIView):
         token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
         refresh_token_data = token.decode('utf-8')
         print('success')
-        return JsonResponse({'status': status.HTTP_200_OK, 'message': "토큰 갱신 성공", 'data': {'token': token_data, 'refresh_token': refresh_token_data}})
+        return JsonResponse({'status': status.HTTP_200_OK, 'message': "토큰 갱신 성공", 'data': {'token': token_data, 'refresh': refresh_token_data}})
 
 class JoinAPI(APIView): # Done
     permission_classes = (AllowAny,)
@@ -292,4 +314,4 @@ class LoginAPI(APIView): # Done
         if getattr(settings, 'REST_SESSION_LOGIN', True):
             login(self.request, user)
         print(200)
-        return JsonResponse({'status': status.HTTP_200_OK, 'message': "로그인 성공", 'data': {'login_token': token_data, 'refresh_token': refresh_token_data}})
+        return JsonResponse({'status': status.HTTP_200_OK, 'message': "로그인 성공", 'data': {'token': token_data, 'refresh': refresh_token_data}})
