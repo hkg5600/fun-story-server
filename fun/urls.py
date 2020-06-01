@@ -14,11 +14,12 @@ urlpatterns = [
     path('story/<int:page>/<int:user>/<int:follow>/<int:category>/', views.GetStoryAPI.as_view()),
     path('story/<int:page>/<int:user>/<int:follow>/', views.GetStoryAPI.as_view()),
     path('story/<int:page>/<int:user>/', views.GetStoryAPI.as_view()),
-    path('story/<int:page>/', views.GetStoryAPI.as_view()),
+    path('story/<int:id>/', views.GetStoryAPI.as_view()),
     path('follow/<int:user>/', views.FollowUserAPI.as_view()),
     path('my-follow/<int:page>/', views.GetFollowerAPI.as_view()),
     path('story-detail/<int:id>/', views.GetStoryDetailAPI.as_view()),
     path('profile/', views.UserProfileAPI.as_view()),
     path('user/<int:id>/', views.UserInfoAPI.as_view()),
     path('user-info/<int:id>/', views.UserInfoWithFollowAPI.as_view()),
+    path('my-info/', views.MyInfoAPI.as_view()),
 ]

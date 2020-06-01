@@ -37,6 +37,13 @@ class UserInfoAPI(APIView):
         serializer = UserSerialzier(user, many=False)
         return JsonResponse({'status': status.HTTP_200_OK, 'message': "success to find", 'data': {'user':serializer.data}})
 
+class MyInfoAPI(APIView):
+    def get_object(self):
+        return self.request.user
+    def get(self, request, format=None):
+        user = self.get_object()
+        serializer = UserSerialzier(user, many=False)
+        return JsonResponse({'status': status.HTTP_200_OK, 'message': "success to find", 'data': {'user':serializer.data}})
 class UserInfoWithFollowAPI(APIView):
     def get_object(self):
         return self.request.user
@@ -176,7 +183,6 @@ class GetStoryAPI(APIView): # Done
     def delete(self, request, id, format=None):   
         story = Story.objects.get(id=id)
         story.delete()
-        story.save()
         return JsonResponse({'status': status.HTTP_200_OK, 'message': "success to delete", 'data': ''})
 
 class GetStoryDetailAPI(APIView):
@@ -189,7 +195,7 @@ class GetStoryDetailAPI(APIView):
         try :
             story = Story.objects.get(id=id)
         except:
-            return JsonResponse({'status': status.HTTP_200_OK, 'message': "no data", 'data': None})    
+            return JsonResponse({'status': status.HTTP_404_NOT_FOUND, 'message': "no data", 'data': None})    
         story.time = story.time + 1
         story.save()
         serializer = StoryCountSerializer(story, many=False)
@@ -208,7 +214,7 @@ class WriteStoryAPI(APIView): # Done
         description = request.data.get("description")
         category = request.data.get("category")
         if (user is None or title is None or description is None):
-              return JsonResponse({'status': status.HTTP_404_NOT_FOUND, 'message': "data is not satisfied", 'data': ''})
+              return JsonResponse({'status': status.HTTP_404_NOT_FOUND, 'message': "데이터가 요구조건을 만족하지 못합니다", 'data': ''})
             
         story = Story.objects.create(user=user, title=title, description=description, category=category)
         story.save()
@@ -273,19 +279,32 @@ class JoinAPI(APIView): # Done
         password1 = request.data.get('password1')
         password2 = request.data.get('password2')
         if (username is None or password1 is None or password2 is None):
-            return JsonResponse({'status': status.HTTP_404_NOT_FOUND, 'message': "데이터가 요구조건을 만족하지 못합니다", 'data': ''})
+            return JsonResponse({'status': status.HTTP_404_NOT_FOUND, 'message': "데이터가 요구조건을 만족하지 못합니다", 'data': None})
 
         if (password1 != password2):
-            return JsonResponse({'status': status.HTTP_400_BAD_REQUEST, 'message': "비밀번호가 일치하지 않습니다", 'data': ''})
+            return JsonResponse({'status': status.HTTP_400_BAD_REQUEST, 'message': "비밀번호가 일치하지 않습니다", 'data': None})
 
         user = User.objects.filter(username=username)
 
         if (user.exists()):
-            return JsonResponse({'status': status.HTTP_403_FORBIDDEN, 'message': "이미 존재하는 아이디입니다", 'data': ''})
+            return JsonResponse({'status': status.HTTP_403_FORBIDDEN, 'message': "이미 존재하는 아이디입니다", 'data': None})
         
         user = User.objects.create_user(username=username, password=password1)
         UserProfile.objects.create(user=user)
-        return JsonResponse({'status': status.HTTP_200_OK, 'data': "", 'message': "회원가입 성공"})
+        expire_ts = int(time.time()) + 120
+        payload = {'username': username, 'expire': expire_ts}
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+
+        token_data = token.decode('utf-8')
+
+        expire_ts = int(time.time()) + 86400 * 14
+
+        payload = {'username': username, 'expire': expire_ts}
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+        refresh_token_data = token.decode('utf-8')
+        if getattr(settings, 'REST_SESSION_LOGIN', True):
+            login(self.request, user)
+        return JsonResponse({'status': status.HTTP_200_OK, 'data': {'token': token_data, 'refresh': refresh_token_data}, 'message': "회원가입 성공"})
 
 class LoginAPI(APIView): # Done
     permission_classes = (AllowAny,)
@@ -293,7 +312,6 @@ class LoginAPI(APIView): # Done
     def post(self, request, *args, **kwargs):
         username = request.data.get('username')
         password = request.data.get('password')
-
         user = authenticate(username=username, password=password)
         
         if (user is None):
